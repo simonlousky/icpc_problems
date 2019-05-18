@@ -13,6 +13,7 @@
 #include <vector>
 #include <numeric>
 #include <stdio.h>
+#include <sstream>
 
 using namespace std;
 typedef long long ll;
@@ -21,29 +22,71 @@ typedef vector<int> vi;
 typedef vector<pair<int,int>> vpi;
 typedef pair<int, int> pii;
 
+// fenwick tree
+int8_t fen_sum(int8_t* fen_arr, ll idx)
+{
+    int result = 0;
+    while(idx)
+    {
+        result += fen_arr[idx];
+        idx -= idx & -idx;
+    }
+    return result;
+}
+
+// fenwick tree
+void fen_add(int8_t* fen_arr, ll idx, ll N)
+{
+    while(idx < N)
+    {
+        fen_arr[idx] += 1;
+        idx += (idx & -idx);
+    }
+}
+
+// fenwick tree
+void fen_sub(int8_t* fen_arr, ll idx, ll N)
+{
+    while(idx < N)
+    {
+        fen_arr[idx] -= 1;
+        idx += (idx & -idx);
+    }
+}
+
 int main()
 {
     ll N, K;
-    while(!cin.eof())
+    while(scanf("%lld %lld", &N, &K) == 2)
     {
         set<int> zeros;
-        set<int> minus;
 
-        cin >> N >> K;
-        for (ll i=1; i<=N; i++)
+        // cin >> N >> K;
+        int8_t* fen_minus = new int8_t[N+1];
+        int8_t* fen_zeros = new int8_t[N+1];
+        int8_t* orig = new int8_t[N+1];
+        for(ll i=0; i<=N; ++i)
+        {
+            fen_minus[i] = 0;
+            fen_zeros[i] = 0;
+        }
+
+        for(ll i=1; i<=N; i++)
         {
             int x;
             cin >> x;
-            if (x<0)
+            orig[i] = (x == 0) ? 0 : x/abs(x);
+
+            if(x < 0)
             {
-                minus.insert(i);
-            }else if (x==0)
+                fen_add(fen_minus, i, N+1);
+            }
+            if(x == 0)
             {
-                zeros.insert(i);
+                fen_add(fen_zeros, i, N+1);
             }
         }
 
-        // iterate over commands
         for (ll i=0; i<K; i++)
         {
             string command;
@@ -52,46 +95,53 @@ int main()
             {
                 int I, V;
                 cin >> I >> V;
-                if (V < 0)
+                V = (V == 0) ? 0 : V/abs(V);
+                int8_t tmp = orig[I];
+                orig[I] = V;
+
+                if(V == tmp)
                 {
-                    minus.insert(I);
-                    zeros.erase(I);
+                    continue;
+                }else if(V < 0)
+                {
+                    fen_add(fen_minus, I, N+1);
+
+                    // if previous was zero remove zero
+                    if(tmp == 0)
+                    {
+                        fen_sub(fen_zeros, I, N+1);
+                    }
                 }else if(V == 0)
                 {
-                    zeros.insert(I);
-                    minus.erase(I);
+                    fen_add(fen_zeros, I, N+1);
+
+                    // if previous was minus
+                    if(tmp == -1)
+                    {
+                        fen_sub(fen_minus, I, N+1);
+                    }
                 }else
                 {
-                    zeros.erase(I);
-                    minus.erase(I);
+                    if(tmp == -1)
+                    {
+                        fen_sub(fen_minus, I, N+1);
+                    }else
+                    {
+                        fen_sub(fen_zeros, I, N+1);
+                    }
                 }
-                
             }else
             {
                 int I, J;
                 cin >> I >> J;
-                bool zero = false;
-                bool negative = false;
-                for (auto idx: zeros)
+                int8_t res = fen_sum(fen_minus, J) - fen_sum(fen_minus, I) + (orig[I]==-1);
+                int8_t zero = fen_sum(fen_zeros, J) - fen_sum(fen_zeros, I) + (orig[I]==0);
+                if(!zero) // handle zeros
                 {
-                    if (I <= idx && idx <= J)
-                    {
-                        zero = true;
-                        break;
-                    }
+                    cout << ((res % 2) ? "-" : "+");
                 }
-                if(zero){
+                else{
                     cout << 0;
-                }else{
-                    
-                    for (auto idx : minus)
-                    {
-                        if (I <= idx && idx <= J)
-                        {
-                            negative = !negative;
-                        }
-                    }
-                    cout << (negative ? "-" : "+");
                 }
             }
             
