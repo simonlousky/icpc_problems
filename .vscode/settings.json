@@ -21,6 +21,9 @@
         "tuple": "cpp",
         "type_traits": "cpp",
         "utility": "cpp",
-        "algorithm": "cpp"
+        "algorithm": "cpp",
+        "xstring": "cpp",
+        "queue": "cpp",
+        "xmemory0": "cpp"
     }
 }
