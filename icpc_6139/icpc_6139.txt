@@ -1,0 +1,12 @@
+slousky@gmail.com
+Simon Lousky
+
+The hardest question for me, I missed the class about fenwick tree and crushed my head 
+around tens of tries with time limit exceeded.
+With the fenwick tree I just count the number of -1's and 0's between I and J.
+If the sum of 0's is not zero then the product is 0
+If the sum of -1's is odd the product is negative
+if both don't apply then the product is positive.
+In fenwick tree add is logN, and sum is logN. 
+for every action 'C' or 'P' we do logN so,
+overall per case K*logN

@@ -1,0 +1,12 @@
+slousky@gmail.com
+Simon Lousky
+
+The described problem is given as a graph where a mouse in cell a can reach cell E (exit) iff a path of weight t that is smaller
+than T exists. 
+We want to find the lightest path from any a in the graph to cell E. 
+The easiest way is build the graph in opposite direction and in one pass of dijkstra find all the weights from any a to E.
+This works because a path of weight t exist from a to E iff a path of weight t exist from E to a in the inverse graph.
+I then check from every dist if it is less than T and return the total.
+ps: the distance from E to E is always 0 therefore it is counted in the final loop 
+Complexity of dijkstra is ElogV, E=M, V=N(<100). we run dijkstra ones for each case and then go over N vertices of the graph. In this case go over all the 101 cells of the vector.
+overall: N + MlogN

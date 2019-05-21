@@ -1,0 +1,10 @@
+slousky@gmail.com
+Simon Lousky
+
+I get every registration in a vii. 
+when the input is finished i generate K entries for every registration.
+each entry is a pair of the ID and the time it shoul pop.
+e.g: (2004, 200), (2004, 400), ... (2004, k*200)
+I put the K*N pairs in a vector and sort it by time then by Q_num
+I output the K first entries.
+Complexity is (N*K)log(N*K) because we sort our Queue vector

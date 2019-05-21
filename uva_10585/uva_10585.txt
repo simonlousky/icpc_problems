@@ -1,0 +1,11 @@
+slousky@gmail.com
+Simon Lousky
+
+I find the convex hull that contains every q in S. 
+If s exists then q_0 in hull has an oposite vertice q_n in hull.
+I can then find a tentative s.
+I iterate over every point q in S, check using a closed formula if the x,y at the opposite side of s exists in S.
+If at some point the oposite vertice is not in S then I reject.
+special case: If the size of the hull is odd, no solution exists.
+complexity: SlogS the time to calculate convex hull. Then S^2 to check every opposite point.
+overall S^2 which passes the test.

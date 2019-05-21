@@ -1,0 +1,7 @@
+slousky@gmail.com
+Simon Lousky
+
+Old fashion back tracking, no special tricks beside the impossible function.
+impossible() checks if there exist a queen on a diagonal, by iterating 
+over every column and its queen row, and check the slope of y-y1/x-x1 == 1.
+This trick I didn't invent but rather found on the internet.

@@ -1,0 +1,13 @@
+slousky@gmail.com
+Simon Lousky
+
+First I tried to divide the total price iteratively cent by cent to every one who can take it.
+This solution got time exceeded. 
+The solution was to iteratively divide the price by beats of the highest common price everybody can pay.
+Every beat at least one friends is expelled from the 'remain' vector.
+The complexity is now O(n). 
+The problem is the order in wich the money should be divided. so I ordered the remain list by the requested order.
+Every person in 'remain' is represented by the remaining price he can pay, and the index in the original order.
+sorting is nlogn so overall we have nlogn. 
+
+
