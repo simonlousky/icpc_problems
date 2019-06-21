@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "*.lex": "lex",
+        "*.il": "mips",
         "array": "cpp",
         "*.tcc": "cpp",
         "bitset": "cpp",
@@ -25,6 +26,8 @@
         "xstring": "cpp",
         "queue": "cpp",
         "xmemory0": "cpp",
-        "stack": "cpp"
+        "stack": "cpp",
+        "iomanip": "cpp",
+        "string_view": "cpp"
     }
 }

@@ -1,9 +1,12 @@
 #include<iostream>
 #include<vector>
+#include<numeric>
+#include<math.h>
+#include <iomanip>
 
 using namespace std;
 #define MAX_M 10005
-#define MAX_DISTANCE 1000
+#define MAX_DISTANCE 51234
 typedef vector<int> vi;
 typedef vector<vi> vvi;
 
@@ -46,9 +49,9 @@ int main(){
         /* obtain min stations between every point */
         floyd(d, d);
 
-        int ref[105][1002] = {0};
+        int ref[105][10002] = {0};
         for (int i=0; i<105 && i<d.size(); i++){
-            for(int j=0; j<1002; j++){
+            for(int j=0; j<1002 && j<(i+1)*R; j++){
                 if(i==0){
                     ref[i][j] = 1;
                     continue;
@@ -61,23 +64,35 @@ int main(){
                 }
             }
         }
+        int C;
+        scanf("%d", &C);
+        printf("Case %d\n", t+1);
+        for(int i=0; i<C; i++){
+            int a,b,m,dist;
+            double res = 0.0;
+            scanf("%d %d %d", &a, &b, &m);
+            dist = d[a-1][b-1];
 
-
-        
-        for (int i=0; i<105 && i<d.size(); i++){
-            for(int j=0; j<30; j++){
-                cout << ref[i][j] << " ";
+            for(int k=0; k<m; k++){
+                res += ref[dist-1][k] / pow(R,dist);
             }
-            cout << endl;
-        }
 
-
-        for (auto a : d){
-            for (auto b: a){
-                cout << b << " ";
+            if(dist == MAX_DISTANCE)
+            {
+                res = 0.0;
             }
-            cout << endl;
+            if(a == b){
+                printf("%.6f\n", 1.0);
+            }
+            else{
+                cout << setprecision(6) << fixed;
+                cout << res << endl;
+                // printf("%.6f\n", (double)res / (pow(R,dist)));
+            }
         }
+        // if(t != T-1){
+            printf("\n");
+        // }
     }
 
     return 0;
