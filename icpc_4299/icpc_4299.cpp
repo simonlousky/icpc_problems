@@ -43,7 +43,34 @@ int main(){
                 }
             }
         }
+        /* obtain min stations between every point */
         floyd(d, d);
+
+        int ref[105][1002] = {0};
+        for (int i=0; i<105 && i<d.size(); i++){
+            for(int j=0; j<1002; j++){
+                if(i==0){
+                    ref[i][j] = 1;
+                    continue;
+                }
+                for(int k=1; k<=R; k++){
+                    if(j-k < 0){
+                        break;
+                    }
+                    ref[i][j] += ref[i-1][j-k];
+                }
+            }
+        }
+
+
+        
+        for (int i=0; i<105 && i<d.size(); i++){
+            for(int j=0; j<30; j++){
+                cout << ref[i][j] << " ";
+            }
+            cout << endl;
+        }
+
 
         for (auto a : d){
             for (auto b: a){
