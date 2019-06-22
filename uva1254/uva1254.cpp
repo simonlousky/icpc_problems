@@ -5,15 +5,17 @@
 #include<queue>
 #include<stack>
 #include<vector>
+#include<set>
 
 #define EPS 1E-9
+#define TOP 10
 
 using namespace std;
 
 typedef vector<int> vi;
 typedef vector<vi> vvi;
 
-/* Suffix Array implementation */
+/* ========= Suffix Array implementation ========= */
 #include <algorithm>
 #include <string>
 #include <iostream>
@@ -64,47 +66,148 @@ void constructSA() { // this version can go up to 100000 characters
     }
 }
 
-// void computeLCP() {
-//     int i, L;
-//     n = SA_str.length()-1;
-//     Phi.assign(n,0);
-//     PLCP.assign(n,0);
-//     LCP.assign(n,0);
-//     Phi[SA[0]] = -1; // default value
-//     for (i = 1; i < n; i++) // compute Phi in O(n)
-//         Phi[SA[i]] = SA[i-1]; // remember which suffix is behind this suffix
-//     for (i = L = 0; i < n; i++) { // compute Permuted LCP in O(n)
-//         if (Phi[i] == -1) { PLCP[i] = 0; continue; } // special case
-//         while (SA_str[i + L] == SA_str[Phi[i] + L]) L++; // L increased max n times
-//         PLCP[i] = L;
-//         L = max(L-1, 0); // L decreased max n times
-//     }
-//     for (i = 0; i < n; i++) // compute LCP in O(n)
-//         LCP[i] = PLCP[SA[i]]; // put the permuted LCP to the correct position
-// }
+/* ======= End of Suffix Array implementation ======= */
 
-/* ====================================== */
+struct str_compare {
+    bool operator() (const pair<string, int>& a, const pair<string, int>& b) const {
+        if(a.first.length() != b.first.length())
+        {
+            return a.first.length() < b.first.length();
+        }
+        if(a.first != b.first){
+            return a.first < b.first;
+        }
+        return a.second < b.second;
+    }
+};
+
+bool prefix(const string& s, const string& sub){
+    for(int i=0; i<sub.length(); i++){
+        if(s[i] != sub[i]){
+            return false;
+        }
+    }
+    return true;
+}
+
+/* binary search lower and upper bound */
+int lower(string& s, string& sub, vi& SA, vi& origin_end_ptr){
+    int n = s.length();
+    int a = 0;
+    int b = n-1;
+    int m;
+
+    while(a <= b) {
+        if(a == b)
+            return a;
+
+        m = (a + b) / 2;
+        string sub_s = s.substr(SA[m], origin_end_ptr[SA[m]]-SA[m]);
+        // cout << "tmp word: " << sub_s << endl;
+        if(sub_s < sub){
+            a = m + 1;
+        }else if(sub_s > sub && !prefix(sub_s, sub)){
+            b = m - 1;
+        }else{
+            b = m;
+        }
+            
+    }
+    return m;
+
+}
+
+int upper(string& s, string& sub, vi& SA, vi& origin_end_ptr){
+    int n = s.length();
+    int a = 0;
+    int b = n-1;
+    int m;
+
+    while(a <= b) {
+        if(a == b)
+            return a-1;
+
+        m = (a + b) / 2;
+        string sub_s = s.substr(SA[m], origin_end_ptr[SA[m]]-SA[m]);
+        // cout << "tmp word: " << sub_s << endl;
+        if(sub_s < sub || prefix(sub_s, sub)){
+            a = m + 1;
+        }else {
+            b = m;
+        }
+            
+    }
+    return m-1;
+}
+/* =================================================================== */
 
 int main() {
     int N;
+    int cursor = 0;
     string s;
     cin >> N;
-    vi lut;
+    vi lut, origin_ptr, origin_end_ptr;
     for(int i=0; i<N; i++){
         cin >> s;
         SA_str.append(s + "$");
         for(int j=0; j<s.length()+1; j++){
             lut.push_back(i+1);
+            origin_ptr.push_back(cursor);
+            origin_end_ptr.push_back(cursor + s.length());
         }
+        cursor+=s.length()+1;
     }
     n = SA_str.length();
     SA_str += '$'; // add terminating character
     constructSA();
-    cout << "SA[i]\tWordId\tSubstring" << endl;
 
-    for (int i = 0; i < n; i++) {
-        cout << SA[i] << "\t" << lut[SA[i]] << "\t" << SA_str.substr(SA[i]) << endl;
+    int Q;
+    string qi;
+    scanf("%d", &Q);
+
+    for(int i=0; i<Q; i++){
+        set<pair<string,int>, str_compare> words;
+        int words_idx[N+1] = {0};
+        cin >> qi;
+        int l = lower(SA_str, qi, SA, origin_end_ptr);
+        int r = upper(SA_str, qi, SA, origin_end_ptr);
+        int k=l;
+
+        if(prefix(SA_str.substr(SA[l]), qi)){
+
+            while(k <= r){
+            // while(prefix(SA_str.substr(SA[k]), qi)){
+                if(words_idx[lut[SA[k]]]){
+                    k++;
+                    continue;
+                }
+
+                words_idx[lut[SA[k]]]++;
+                string sub = SA_str.substr(origin_ptr[SA[k]], origin_end_ptr[SA[k]]-origin_ptr[SA[k]]);
+                // cout << "inserting " << sub << endl;
+                words.insert(make_pair(sub, lut[SA[k]]));
+                if (words.size() > TOP){
+                    words.erase(*words.rbegin());
+                }
+                k++;
+            }
+        }
+
+        k = 1;
+        if(words.size() > 0){
+            auto it = words.begin();
+            cout << it->second;
+            while(++it != words.end() && k != TOP){
+                cout << " " << it->second;
+                k++;
+            }
+            cout << endl;
+        }else{
+            cout << -1 << endl;
+        }
+
     }
+
     return 0;
 }
 
