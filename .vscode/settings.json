@@ -28,6 +28,7 @@
         "xmemory0": "cpp",
         "stack": "cpp",
         "iomanip": "cpp",
-        "string_view": "cpp"
+        "string_view": "cpp",
+        "sstream": "cpp"
     }
 }

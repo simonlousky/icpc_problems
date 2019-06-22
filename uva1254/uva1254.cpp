@@ -144,9 +144,11 @@ int upper(string& s, string& sub, vi& SA, vi& origin_end_ptr){
 int main() {
     int N;
     int cursor = 0;
-    string s;
-    cin >> N;
     vi lut, origin_ptr, origin_end_ptr;
+    string s;
+
+    /* Create Array */
+    scanf("%d", &N);
     for(int i=0; i<N; i++){
         cin >> s;
         SA_str.append(s + "$");
@@ -161,6 +163,7 @@ int main() {
     SA_str += '$'; // add terminating character
     constructSA();
 
+    /* Get Queries */
     int Q;
     string qi;
     scanf("%d", &Q);
@@ -168,6 +171,7 @@ int main() {
     for(int i=0; i<Q; i++){
         set<pair<string,int>, str_compare> words;
         int words_idx[N+1] = {0};
+
         cin >> qi;
         int l = lower(SA_str, qi, SA, origin_end_ptr);
         int r = upper(SA_str, qi, SA, origin_end_ptr);
@@ -176,23 +180,24 @@ int main() {
         if(prefix(SA_str.substr(SA[l]), qi)){
 
             while(k <= r){
-            // while(prefix(SA_str.substr(SA[k]), qi)){
-                if(words_idx[lut[SA[k]]]){
+                if(words_idx[lut[SA[k]]]){ /* optimization to skip substring creations and insert in set */
                     k++;
                     continue;
                 }
-
                 words_idx[lut[SA[k]]]++;
+                
+                /* Restore the original word with lookup tables */
                 string sub = SA_str.substr(origin_ptr[SA[k]], origin_end_ptr[SA[k]]-origin_ptr[SA[k]]);
-                // cout << "inserting " << sub << endl;
                 words.insert(make_pair(sub, lut[SA[k]]));
-                if (words.size() > TOP){
+
+                if (words.size() > TOP){ /* another optimization to keep the set small */
                     words.erase(*words.rbegin());
                 }
                 k++;
             }
         }
 
+        /* Print output */
         k = 1;
         if(words.size() > 0){
             auto it = words.begin();
@@ -210,5 +215,3 @@ int main() {
 
     return 0;
 }
-
-/* ===================== */
