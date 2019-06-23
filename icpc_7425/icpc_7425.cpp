@@ -6,6 +6,7 @@
 #include<stack>
 #include<vector>
 #include<set>
+#include<map>
 
 #define EPS 1E-9
 
@@ -32,14 +33,18 @@ struct point { double x, y;   // only used if more precision is needed
 struct line { double a, b, c; };          // a way to represent a line
 
 struct segment { point a, b; 
-    bool operator < (segment& other) const { // override less than operator
+    bool operator < (const segment& other) const { // override less than operator
         if (fabs(a.x - other.a.x) > EPS)                 // useful for sorting
             return a.x < other.a.x;          // first criteria , by x-coordinate
         return a.y < other.a.y; }   
-    bool operator == (const segment& other){
+    bool operator == (const segment& other) const{
         return a == other.a && b == other.b;
     }
-};           
+};    
+
+bool operator<(const segment& a, const segment& b){
+    return a.operator<(b);
+}
 
 struct inverseCompare{
     bool operator() (const pair<int, segment>& a, const pair<int, segment>& b){
@@ -57,7 +62,6 @@ void pointsToLine(point p1, point p2, line &l) {
         l.c = -(double)(l.a * p1.x) - p1.y;
     } 
 }
-
 
 bool areParallel(line l1, line l2) {       // check coefficients a & b
     return (fabs(l1.a-l2.a) < EPS) && (fabs(l1.b-l2.b) < EPS); }
@@ -94,6 +98,8 @@ bool segmentIntersect(segment& a, segment& b, point &p) {
             return true;
         }
     }
+    p.x = INT16_MAX;
+    p.y = INT16_MAX;
     return false;
 }
 
@@ -119,7 +125,6 @@ double segment_to_x(const string& s, const segment& a){
 }
 
 /* ========= End of CG functions ========= */
-
 
 /* Floyd-Warshal */
 void floyd(const vvi& g, vvi& d){
@@ -157,6 +162,175 @@ bool limited_cycle(vvi& g, int s, int limit){
     return hit;
 }
 
+/* ========== sweep algorithm =========== */
+
+struct Event{
+    static vector<segment>* segments;
+    string type;
+    int segment_id;
+    pair<int, int> intersection;
+    point intersection_point;
+    
+    Event(string type, int segment_id){
+        type = type;
+        segment_id = segment_id;
+    }
+
+    Event(string type, int intersect_s1, int intersect_s2, point p){
+        type = type;
+        intersection = make_pair(intersect_s1, intersect_s2);
+        intersection_point = p;
+    }
+
+    static void set_segments(vector<segment>& segments){
+        segments = segments;
+    }
+
+    bool operator<(const Event& other) const{
+        double a,b;
+        a = (type == "intersection") ? intersection_point.x : segment_to_x(type, segments->at(segment_id));
+        b = (other.type == "intersection") ? other.intersection_point.x : segment_to_x(other.type, segments->at(other.segment_id));
+        return a < b;
+    }
+};
+
+
+struct Status{
+    int segment_id;
+    double y_location;
+
+    Status(int id){
+        segment_id = id;
+    }
+
+    Status(int segment_id, double y_location){
+        segment_id = segment_id;
+        y_location = y_location;
+    }
+
+    void set_y(double y){
+        y_location = y;
+    }
+
+    bool operator<(const Status& other){
+        return y_location < other.y_location;
+    }
+
+    bool operator==(const Status& other){
+        return segment_id == other.segment_id;
+    }
+
+    bool operator!=(const Status& other){
+        return !operator==(other);
+    }
+};
+
+int check_intersect_up(set<Status>& status, vector<segment>& segments, int a, point& p){
+    auto it = status.find(a);
+    if(next(it) != status.end()){
+        /* check if they intersect */
+        if(segmentIntersect(segments[it->segment_id], segments[next(it)->segment_id], p)){
+            return next(it)->segment_id;
+        }
+    }
+    return -1;
+}
+
+int check_intersect_down(set<Status>& status, vector<segment>& segments, int a, point& p){
+    auto it = status.find(a);
+    if(prev(it) != status.end()){
+        /* check if they intersect */
+        if(segmentIntersect(segments[it->segment_id], segments[prev(it)->segment_id], p)){
+            return prev(it)->segment_id;
+        }
+    }
+    return -1;
+}
+
+void find_intersections(vector<segment>& pipes, vector<vector<bool>>& result){
+
+    priority_queue<Event> events;
+    set<Status> status;
+
+    for (int i=0; i<pipes.size(); i++){
+        events.push(Event("start", i));
+        events.push(Event("end", i));
+    }
+
+    /* Sweep */
+    while(!events.empty()){
+        point p;
+        auto event = events.top(); events.pop();
+
+        if(event.type != "intersection"){ /* start or end point */
+
+            if(event.type == "end"){
+                status.erase(Status(event.segment_id));
+                continue;
+            }
+
+            double x = segment_to_x(event.type, pipes[event.segment_id]);
+            segmentIntersect(pipes[event.segment_id], x, p);
+            status.insert(Status(event.segment_id, p.y));
+
+            /* check up and down */
+            int b = check_intersect_up(status, pipes, event.segment_id, p);
+            if(b > -1 && result[event.segment_id][b] == false){
+                events.push(Event("intersection", event.segment_id, b, p));
+                result[event.segment_id][b] = true;
+            }
+            b = check_intersect_down(status, pipes, event.segment_id, p);
+            if(b > -1 && result[event.segment_id][b] == false){
+                events.push(Event("intersection", event.segment_id, b, p));
+                result[event.segment_id][b] = true;
+            }
+            
+        }else{ /* is intersection */
+            int a,b;
+            a = event.intersection.first;
+            b = event.intersection.second;
+
+            segmentIntersect(pipes[a], event.intersection_point.x+0.01, p);
+            status.erase(Status(a));
+            status.insert(Status(a, p.y));
+
+            segmentIntersect(pipes[b], event.intersection_point.x+0.01, p);
+            status.erase(Status(b));
+            status.insert(Status(b, p.y));
+
+            /* check up and down for a*/
+            int c = check_intersect_up(status, pipes, a, p);
+            if(c > -1 && result[a][c] == false){
+                events.push(Event("intersection", a, c, p));
+                result[a][c] = true;
+            }
+            c = check_intersect_down(status, pipes, a, p);
+            if(c > -1 && result[a][c] == false){
+                events.push(Event("intersection", a, c, p));
+                result[a][c] = true;
+            }
+
+            /* check up and down for b */
+            c = check_intersect_up(status, pipes, b, p);
+            if(c > -1 && result[b][c] == false){
+                events.push(Event("intersection", b, c, p));
+                result[b][c] = true;
+            }
+            c = check_intersect_down(status, pipes, b, p);
+            if(c > -1 && result[b][c] == false){
+                events.push(Event("intersection", b, c, p));
+                result[b][c] = true;
+            }
+
+        }
+
+    }
+}
+
+
+
+/* ================================================= */
+
 int main(){
     int w, p;
     
@@ -187,71 +361,9 @@ int main(){
         
         /* Create intersection graph */
         // vvi d(p, vi(p, INT16_MAX));
-
-        /* sweep */
-        struct statusCompare{
-            bool operator()(const pair<point, segment>& a, const pair<point, segment>& b){
-                return a.first.y < b.first.y;
-            }
-        };
+        vector<vector<bool>> intersection_map(p, vector<bool>(p, false));
+        find_intersections(pipes, intersection_map);
         
-        struct eventCompare{
-            bool operator()(const pair<string, pair<segment*,segment*>>& a, const pair<string, pair<segment*,segment*>>& b){
-                double p_a, p_b;
-
-                segment s_a = *a.second.first;
-                segment s_b = *b.second.first;
-
-                p_a = segment_to_x(a.first, *a.second.first);
-                p_b = segment_to_x(b.first, *b.second.first);
-
-                return p_a < p_b;
-            }
-        };
-
-        struct Event{
-            string type;
-            segment s;
-            pair<segment, segment> intersection;
-            point intersection_point;
-
-            bool operator<(const Event& other){
-                double a,b;
-                a = (type == "intersection") ? intersection_point.x : segment_to_x(type, s);
-                b = (other.type == "intersection") ? other.intersection_point.x : segment_to_x(other.type, other.s);
-                return a < b;
-            }
-        };
-        
-        priority_queue< pair<string, pair<segment*, segment*>>, vector< pair<string,pair<segment*,segment*> > >, eventCompare> events;
-        vector<segment*> status;
-        for (int i=0; i<p; i++){
-            events.push(make_pair("start", make_pair(&pipes[i],nullptr)));
-            events.push(make_pair("end", make_pair(&pipes[i],nullptr)));
-        }
-        while(!events.empty()){
-            point p;
-            auto event = events.top();
-
-            if(event.first != "intersection"){ /* start or end point */
-                double x = segment_to_x(event.first, *event.second.first);
-                segment* seg = event.second.first; events.pop();
-                segmentIntersect(*seg, x, p);
-                if(event.first == "end"){
-                    auto it = find(status.begin(), status.end(), seg);
-                    status.push_back(seg);
-                }else{
-                    status.insert(make_pair(p, *seg));
-                }
-            }else{ /* is intersection */
-
-                if(segmentIntersect(*seg, x, p)){
-                    events.push(make_pair("intersection", p.x, seg));
-                }
-            }
-
-        }
-
         /* ====== */ 
 
         g.assign(p, vi());
