@@ -9,9 +9,12 @@ using namespace std;
 #define MAX_DISTANCE 51234
 typedef vector<int> vi;
 typedef vector<vi> vvi;
+typedef long long ll;
+typedef vector<ll> vl;
+typedef vector<vl> vvl;
 
 /* Floyd-Warshal */
-void floyd(const vvi& g, vvi& d){
+void floyd(const vvl& g, vvl& d){
     for(int k=0; k<g.size(); k++){
         for(int u=0; u<g.size(); u++){
             for(int v=0; v<g.size(); v++){
@@ -26,14 +29,15 @@ int main(){
     scanf("%d", &T);
     for (int t = 0; t < T; t++){
         int N, R;
-        vvi d, g;
+        vvl d, g;
+        
         scanf("%d %d", &N, &R);
         for(int i=0; i<N; i++){
             string connections;
             cin >> connections;
 
-            d.push_back(vi());
-            g.push_back(vi());
+            d.push_back(vl());
+            g.push_back(vl());
             for(int j=0; j<N; j++){
                 int w = connections[j] == 'N' ? MAX_DISTANCE : 1;
                 
@@ -76,23 +80,19 @@ int main(){
             for(int k=0; k<m; k++){
                 res += ref[dist-1][k] / pow(R,dist);
             }
-
-            if(dist == MAX_DISTANCE)
+            
+            if(dist >= MAX_DISTANCE)
             {
                 res = 0.0;
+            }else if(a == b || m > pow(R, dist)){
+                res = 1.0;
             }
-            if(a == b){
-                printf("%.6f\n", 1.0);
-            }
-            else{
-                cout << setprecision(6) << fixed;
-                cout << res << endl;
-                // printf("%.6f\n", (double)res / (pow(R,dist)));
-            }
+            cout << setprecision(6) << fixed;
+            cout << res << endl;
         }
-        // if(t != T-1){
+        if(t != T-1){
             printf("\n");
-        // }
+        }
     }
 
     return 0;
