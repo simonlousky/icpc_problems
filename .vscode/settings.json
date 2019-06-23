@@ -29,6 +29,10 @@
         "stack": "cpp",
         "iomanip": "cpp",
         "string_view": "cpp",
-        "sstream": "cpp"
+        "sstream": "cpp",
+        "xutility": "cpp",
+        "xtree": "cpp",
+        "set": "cpp",
+        "xiosbase": "cpp"
     }
 }
