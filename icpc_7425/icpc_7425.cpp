@@ -8,7 +8,8 @@
 #include<set>
 #include<map>
 
-#define EPS 1E-9
+#define EPS 1e-9
+#define endl '\n'
 
 using namespace std;
 
@@ -16,7 +17,58 @@ typedef vector<int> vi;
 typedef vector<vi> vvi;
 typedef long long ll;
 
+/* ================================================= */
+/* ************************************************** */
+
+struct PT {
+  double x, y;
+  PT() {}
+  PT(double x, double y) : x(x), y(y) {}
+  PT(const PT &p) : x(p.x), y(p.y)    {}
+  PT operator + (const PT &p)  const { return PT(x+p.x, y+p.y); }
+  PT operator - (const PT &p)  const { return PT(x-p.x, y-p.y); }
+  PT operator * (double c)     const { return PT(x*c,   y*c  ); }
+  PT operator / (double c)     const { return PT(x/c,   y/c  ); }
+  bool operator !=(const PT &p)  const { return x != p.x || y != p.y ; }
+};
+
+double dot(PT p, PT q)     { return p.x*q.x+p.y*q.y; }
+double dist2(PT p, PT q)   { return dot(p-q,p-q); }
+double cross(PT p, PT q)   { return p.x*q.y-p.y*q.x; }
+ostream &operator<<(ostream &os, const PT &p) {
+  os << "(" << p.x << "," << p.y << ")";
+}
+
+// determine if lines from a to b and c to d are parallel or collinear
+bool LinesParallel(PT a, PT b, PT c, PT d) {
+  return fabs(cross(b-a, c-d)) < EPS;
+}
+
+bool LinesCollinear(PT a, PT b, PT c, PT d) {
+  return LinesParallel(a, b, c, d)
+      && fabs(cross(a-b, a-c)) < EPS
+      && fabs(cross(c-d, c-a)) < EPS;
+}
+
+bool SegmentsIntersect(PT a, PT b, PT c, PT d) {
+  if (LinesCollinear(a, b, c, d)) {
+    if (dist2(a, c) < EPS || dist2(a, d) < EPS ||
+      dist2(b, c) < EPS || dist2(b, d) < EPS) return true;
+    if (dot(c-a, c-b) > 0 && dot(d-a, d-b) > 0 && dot(c-b, d-b) > 0)
+      return false;
+    return true;
+  }
+  if (cross(d-a, b-a) * cross(c-a, b-a) > 0) return false;
+  if (cross(a-c, d-c) * cross(b-c, d-c) > 0) return false;
+  return true;
+}
+
+/****************************************
+ * *************************************?
+
+
 /* =========== CG functions ============ */
+
 
 struct point { double x, y;   // only used if more precision is needed
     point() { x = y = 0.0; }                      // default constructor
@@ -32,7 +84,34 @@ struct point { double x, y;   // only used if more precision is needed
 
 struct line { double a, b, c; };          // a way to represent a line
 
-struct segment { point a, b; 
+struct segment { 
+    point a, b; 
+
+    point get_left(){
+        if (a.x < b.x || fabs(a.x - b.x) < EPS){
+            return a;
+        }
+        return b;
+    }
+    point get_right(){
+        if (a.x < b.x){
+            return b;
+        }
+        return a;
+    }
+    point get_down(){
+        if (a.y < b.y || fabs(a.y - b.y) < EPS){
+            return a;
+        }
+        return b;
+    }
+    point get_up(){
+        if (a.y < b.y){
+            return b;
+        }
+        return a;
+    }
+
     bool operator < (const segment& other) const { // override less than operator
         if (fabs(a.x - other.a.x) > EPS)                 // useful for sorting
             return a.x < other.a.x;          // first criteria , by x-coordinate
@@ -41,10 +120,6 @@ struct segment { point a, b;
         return a == other.a && b == other.b;
     }
 };    
-
-bool operator<(const segment& a, const segment& b){
-    return a.operator<(b);
-}
 
 struct inverseCompare{
     bool operator() (const pair<int, segment>& a, const pair<int, segment>& b){
@@ -68,7 +143,9 @@ bool areParallel(line l1, line l2) {       // check coefficients a & b
 
 // returns true (+ intersection point) if two lines are intersect
 bool areIntersect(line l1, line l2, point &p) {
-    if (areParallel(l1, l2)) return false;            // no intersection
+    if (areParallel(l1, l2)) {
+        return false;      
+    }
     // solve system of 2 linear algebraic equations with 2 unknowns
     p.x = (l2.b * l1.c - l1.b * l2.c) / (l2.a * l1.b - l1.a * l2.b);
     // special case: test for vertical line to avoid division by zero
@@ -76,30 +153,36 @@ bool areIntersect(line l1, line l2, point &p) {
     else                  p.y = -(l2.a * p.x + l2.c);
     return true; }
 
+
 bool segmentIntersect(segment& a, segment& b, point &p) {
     line l1, l2;
     pointsToLine(a.a, a.b, l1);
     pointsToLine(b.a, b.b, l2);
+    
+    // check first if have common points
+    if(a.a == b.a || a.a == b.b || a.b == b.a || a.b == b.b){
+        return true;
+    }
 
     if(areIntersect(l1, l2, p)){
-        double x_left, x_right, y_down, y_up;
-        if(a.a.x < a.b.x){
-            x_left = a.a.x;
-            x_right = a.b.x;
+        // cout << "intersection candidate: " << p.x << "," << p.y << endl;
+        double left = a.get_left().x < b.get_left().x ? b.get_left().x : a.get_left().x;
+        double top = a.get_up().y < b.get_up().y ? a.get_up().y : b.get_up().y;
+        double down = a.get_down().y < b.get_down().y ? b.get_down().y : a.get_down().y;
+        double right = a.get_right().x < b.get_right().x ? a.get_right().x : b.get_right().x;
+        // cout << "get_right: " << b.get_right().x << endl;
+        // cout << "left: " << left << ", right: " << right << ", top: " << top << ", down: " << down << endl;
+        if( (p.x > right && fabs(p.x - right) > EPS)
+        ||  (p.x < left && fabs(p.x - left) > EPS)
+        ||  (p.y < down && fabs(p.y - down) > EPS)
+        ||  (p.y > top && fabs(p.y - top) > EPS) )
+        {
+            // cout << "candidate is intersection" << endl;
+            return false;
         }
-        if(a.a.y < a.b.y){
-            y_down = a.a.y;
-            y_up = a.b.y;
-        }
-        if( (x_left < p.x || fabs(x_left-p.x) < EPS)
-        && (x_right > p.x || fabs(x_right-p.x) < EPS) 
-        && (y_down < p.y || fabs(y_down-p.y) > EPS)
-        && (y_up > p.y || fabs(y_up-p.x) > EPS) ){
-            return true;
-        }
+    
+        return true;
     }
-    p.x = INT16_MAX;
-    p.y = INT16_MAX;
     return false;
 }
 
@@ -128,9 +211,9 @@ double segment_to_x(const string& s, const segment& a){
 
 /* Floyd-Warshal */
 void floyd(const vvi& g, vvi& d){
-    for(int k=0; k<g.size(); k++){
-        for(int u=0; u<g.size(); u++){
-            for(int v=0; v<g.size(); v++){
+    for(size_t k=0; k<g.size(); k++){
+        for(size_t u=0; u<g.size(); u++){
+            for(size_t v=0; v<g.size(); v++){
                 d[u][v] = min(d[u][v], d[u][k]+d[k][v]);
             }
         }
@@ -138,8 +221,10 @@ void floyd(const vvi& g, vvi& d){
 }
 
 void dfs(vvi&g, int s, int limit, vector<bool>& visible, bool& hit, int o){
-    if(limit == 0 && s == o){
-        hit = true;
+    if(limit == 0){
+        if(s == o){
+            hit = true;
+        }
         return;
     }
     for(int u:g[s]) {
@@ -152,190 +237,35 @@ void dfs(vvi&g, int s, int limit, vector<bool>& visible, bool& hit, int o){
     }
 }
 
+bool dfs2(vvi &g, vector<int> &col, int node, int c) {
+  if (col[node] != -1)
+    return col[node] == c;
+
+  col[node] = c;
+  for (auto &to : g[node]) {
+    if (!dfs2(g, col, to, c ^ 1))
+      return false;
+  }
+  return true;
+}
+
 bool limited_cycle(vvi& g, int s, int limit){
     vector<bool> visible;
     bool hit = false;
     visible.assign(g.size(), false);   
 
-    dfs(g, s, limit, visible, hit, s);
+    // dfs(g, s, limit, visible, hit, s);
+
     // cout << "limited cycle: " << hit << endl;
     return hit;
 }
-
-/* ========== sweep algorithm =========== */
-
-struct Event{
-    static vector<segment>* segments;
-    string type;
-    int segment_id;
-    pair<int, int> intersection;
-    point intersection_point;
-    
-    Event(string type, int segment_id){
-        type = type;
-        segment_id = segment_id;
-    }
-
-    Event(string type, int intersect_s1, int intersect_s2, point p){
-        type = type;
-        intersection = make_pair(intersect_s1, intersect_s2);
-        intersection_point = p;
-    }
-
-    static void set_segments(vector<segment>& segments){
-        segments = segments;
-    }
-
-    bool operator<(const Event& other) const{
-        double a,b;
-        a = (type == "intersection") ? intersection_point.x : segment_to_x(type, segments->at(segment_id));
-        b = (other.type == "intersection") ? other.intersection_point.x : segment_to_x(other.type, segments->at(other.segment_id));
-        return a < b;
-    }
-};
-
-
-struct Status{
-    int segment_id;
-    double y_location;
-
-    Status(int id){
-        segment_id = id;
-    }
-
-    Status(int segment_id, double y_location){
-        segment_id = segment_id;
-        y_location = y_location;
-    }
-
-    void set_y(double y){
-        y_location = y;
-    }
-
-    bool operator<(const Status& other){
-        return y_location < other.y_location;
-    }
-
-    bool operator==(const Status& other){
-        return segment_id == other.segment_id;
-    }
-
-    bool operator!=(const Status& other){
-        return !operator==(other);
-    }
-};
-
-int check_intersect_up(set<Status>& status, vector<segment>& segments, int a, point& p){
-    auto it = status.find(a);
-    if(next(it) != status.end()){
-        /* check if they intersect */
-        if(segmentIntersect(segments[it->segment_id], segments[next(it)->segment_id], p)){
-            return next(it)->segment_id;
-        }
-    }
-    return -1;
-}
-
-int check_intersect_down(set<Status>& status, vector<segment>& segments, int a, point& p){
-    auto it = status.find(a);
-    if(prev(it) != status.end()){
-        /* check if they intersect */
-        if(segmentIntersect(segments[it->segment_id], segments[prev(it)->segment_id], p)){
-            return prev(it)->segment_id;
-        }
-    }
-    return -1;
-}
-
-void find_intersections(vector<segment>& pipes, vector<vector<bool>>& result){
-
-    priority_queue<Event> events;
-    set<Status> status;
-
-    for (int i=0; i<pipes.size(); i++){
-        events.push(Event("start", i));
-        events.push(Event("end", i));
-    }
-
-    /* Sweep */
-    while(!events.empty()){
-        point p;
-        auto event = events.top(); events.pop();
-
-        if(event.type != "intersection"){ /* start or end point */
-
-            if(event.type == "end"){
-                status.erase(Status(event.segment_id));
-                continue;
-            }
-
-            double x = segment_to_x(event.type, pipes[event.segment_id]);
-            segmentIntersect(pipes[event.segment_id], x, p);
-            status.insert(Status(event.segment_id, p.y));
-
-            /* check up and down */
-            int b = check_intersect_up(status, pipes, event.segment_id, p);
-            if(b > -1 && result[event.segment_id][b] == false){
-                events.push(Event("intersection", event.segment_id, b, p));
-                result[event.segment_id][b] = true;
-            }
-            b = check_intersect_down(status, pipes, event.segment_id, p);
-            if(b > -1 && result[event.segment_id][b] == false){
-                events.push(Event("intersection", event.segment_id, b, p));
-                result[event.segment_id][b] = true;
-            }
-            
-        }else{ /* is intersection */
-            int a,b;
-            a = event.intersection.first;
-            b = event.intersection.second;
-
-            segmentIntersect(pipes[a], event.intersection_point.x+0.01, p);
-            status.erase(Status(a));
-            status.insert(Status(a, p.y));
-
-            segmentIntersect(pipes[b], event.intersection_point.x+0.01, p);
-            status.erase(Status(b));
-            status.insert(Status(b, p.y));
-
-            /* check up and down for a*/
-            int c = check_intersect_up(status, pipes, a, p);
-            if(c > -1 && result[a][c] == false){
-                events.push(Event("intersection", a, c, p));
-                result[a][c] = true;
-            }
-            c = check_intersect_down(status, pipes, a, p);
-            if(c > -1 && result[a][c] == false){
-                events.push(Event("intersection", a, c, p));
-                result[a][c] = true;
-            }
-
-            /* check up and down for b */
-            c = check_intersect_up(status, pipes, b, p);
-            if(c > -1 && result[b][c] == false){
-                events.push(Event("intersection", b, c, p));
-                result[b][c] = true;
-            }
-            c = check_intersect_down(status, pipes, b, p);
-            if(c > -1 && result[b][c] == false){
-                events.push(Event("intersection", b, c, p));
-                result[b][c] = true;
-            }
-
-        }
-
-    }
-}
-
-
 
 /* ================================================= */
 
 int main(){
     int w, p;
     
-    while(scanf("%d", &w) != EOF){
-        scanf("%d", &p);
+    while(cin >> w >> p){
 
         vector<point> wells;
         vector<segment> pipes;
@@ -353,7 +283,7 @@ int main(){
         for(int i=0; i<p; i++){
             segment pipe;
             int well_idx;
-            scanf("%d %lf %lf", &well_idx, &pipe.b.x, &pipe.b.y);
+            cin >> well_idx >> pipe.b.x >> pipe.b.y;
             pipe.a = wells[well_idx-1];
             /* accumulate pipes */
             pipes.push_back(pipe);
@@ -361,37 +291,52 @@ int main(){
         
         /* Create intersection graph */
         // vvi d(p, vi(p, INT16_MAX));
-        vector<vector<bool>> intersection_map(p, vector<bool>(p, false));
-        find_intersections(pipes, intersection_map);
+        // vector<vector<bool>> intersection_map(p, vector<bool>(p, false));
+        // find_intersections(pipes, intersection_map);
         
         /* ====== */ 
 
         g.assign(p, vi());
-        for(int i=0; i<pipes.size(); i++){
-            for(int j=i; j<pipes.size(); j++){
+        for(size_t i=0; i<pipes.size(); i++){
+            for(size_t j=i+1; j<pipes.size(); j++){
                 point p;
-                if(segmentIntersect(pipes[i], pipes[j], p)
-                && !(p == pipes[i].a)){
+                if(pipes[i].a == pipes[j].a){
+                    continue;
+                }
+
+                // if(SegmentsIntersect(PT(pipes[i].a.x, pipes[i].a.y), PT(pipes[i].b.x, pipes[i].b.y),
+                //                     PT(pipes[j].a.x, pipes[j].a.y), PT(pipes[j].b.x, pipes[j].b.y))){
+
+                if(segmentIntersect(pipes[i], pipes[j], p)){
+                    // cout << "intersection found: " << endl;
+                    // cout << pipes[i].a.x << "," << pipes[i].a.y;
+                    // cout << "---" << pipes[i].b.x << "," << pipes[i].b.y;
+                    // cout << " X " << pipes[j].a.x << "," << pipes[j].a.y;
+                    // cout << "---" << pipes[j].b.x << "," << pipes[j].b.y << endl;
                     g[i].push_back(j);
                     g[j].push_back(i);
+                    // cout << i << "->" << j << " added" << endl;
                 }
             }
         }
 
-        // floyd(g, d);
-
-        // for(int i=0; i<p; i++){
-        //     for(int j=0; j<p; j++){
-        //         cout << d[i][j] << "\t";
-                
+        // int k=0;
+        // for(auto u:g){
+        //     cout << k << ": ";
+        //     for(auto v:u){
+        //         cout << " " << v;
         //     }
         //     cout << endl;
+        //     k++;
         // }
 
-        for(int i=0; i<p; i++){
-            if (limited_cycle(g, i, 3)){
-                impossible = true;
-                break;
+        vector<int> col(p, -1);
+        for (int i = 0; i < p; ++i) {
+            if (col[i] == -1){
+                if(!dfs2(g, col, i, 0)){
+                    impossible = true;
+                    break;
+                }
             }
         }
 
@@ -400,6 +345,7 @@ int main(){
         }else{
             cout << "possible" << endl; 
         }
+
 
     }
     
