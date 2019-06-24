@@ -57,9 +57,9 @@ int main(){
         /* obtain min stations between every point */
         floyd(d, d);
 
-        vvi ref(10005, vi(105, 0));
+        vvl ref(105, vl(10005, 0));
         for (int i=0; i<105 && i<d.size(); i++){
-            for(int j=0; j<1002 && j<(i+1)*R; j++){
+            for(int j=0; j<10005 && j<(i+1)*R; j++){
                 if(i==0){
                     ref[i][j] = 1;
                     continue;
@@ -85,18 +85,22 @@ int main(){
                 res += ref[dist-1][k] / pow(R,dist);
             }
             
-            if(dist >= MAX_DISTANCE)
+            if(dist > 99)
             {
                 res = 0.0;
-            }else if(a == b || m > pow(R, dist)){
+            }else if(a == b || (m >= pow(R, dist) && dist <= m)){
+                // if(t==83){
+                //     cout << "dist: " << dist << ", R: " << R << endl;
+                //     cout << "a: " << a << ", b: " << b << ", m: " << m << endl;
+                // }
                 res = 1.0;
             }
             cout << setprecision(6) << fixed;
             cout << res << endl;
         }
-        if(t != T-1){
+        // if(t != T-1){
             printf("\n");
-        }
+        // }
     }
 
     return 0;
