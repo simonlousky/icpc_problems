@@ -1,0 +1,31 @@
+1. The first stage is to build the graph of reachablity between every couple.
+This stage is accomplished with a simple graph (vvi) where we connect each vertice i to vertice j
+whene we gen that the input i,j is Y. 
+Because the problem states that the couple will always choose the best option for travel, 
+we calculate the min distance from a to b in the graph.
+Since we may need this for a large number of couples, we build the distance lookup table with floyd-warshall.
+2. The second stage is count the number of possible price distributions for a couple with budget m,
+then divide this number by the total number of possible distributions.
+Calculating the number of possible price distributions:
+
+given R = 4
+                      length 
+                      of 
+                      travel
+added up money paided        | 1 | 2 | 3 | 4 | 5 | 6 | ... | 1000
+                           1 | 1 | 1 | 1 | 1 | 0 | 0 | ... | 0
+                           2 | 0 | 1 | 2 | 3 | 4 | 5 | ... | 0
+                           3 | 0 | 0 | 1 | 3 | 6 | 10| ... | 0
+                           4 | 0 | 0 | 0 | 1 | 4 | 10| ... | 0
+
+We look at the following recursive formula:
+Number price distributions with path of length d, and added up paid price j
+N(i, j) = N(i-1, j-1) + N(i-1, j-2) + ... + N(i-1, j-R)
+In the solution we calculate the generic table of possiblities since it is the same base for every couple.
+
+To get the result for a specific d, m we sum up the d'th row and divide by R^d
+
+This technique worked on most tests, but eventually since we got wrong answers again and again,
+we tried summing up the probabilities directly instead of counting and then calculate the probability,
+and this did the trick.
+
