@@ -2,9 +2,13 @@
 #include<vector>
 #include<numeric>
 #include<math.h>
-#include <iomanip>
+#include<string>
+#include<iomanip>
+#include<algorithm>
+#include<stdio.h>
 
 using namespace std;
+
 #define MAX_M 10005
 #define MAX_DISTANCE 51234
 typedef vector<int> vi;
@@ -15,9 +19,9 @@ typedef vector<vl> vvl;
 
 /* Floyd-Warshal */
 void floyd(const vvl& g, vvl& d){
-    for(int k=0; k<g.size(); k++){
-        for(int u=0; u<g.size(); u++){
-            for(int v=0; v<g.size(); v++){
+    for(size_t k=0; k<g.size(); k++){
+        for(size_t u=0; u<g.size(); u++){
+            for(size_t v=0; v<g.size(); v++){
                 d[u][v] = min(d[u][v], d[u][k]+d[k][v]);
             }
         }
@@ -53,7 +57,7 @@ int main(){
         /* obtain min stations between every point */
         floyd(d, d);
 
-        int ref[105][10002] = {0};
+        vvi ref(10005, vi(105, 0));
         for (int i=0; i<105 && i<d.size(); i++){
             for(int j=0; j<1002 && j<(i+1)*R; j++){
                 if(i==0){
